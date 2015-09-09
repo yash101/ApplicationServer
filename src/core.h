@@ -2,6 +2,7 @@
 #define RETURNSTATUSCODE_H
 #include <exception>
 #include <string>
+#define StatusCode(msg, code) ReturnStatusCode(msg, code, __FILE__, __LINE__)
 class ReturnStatusCode
 {
 private:

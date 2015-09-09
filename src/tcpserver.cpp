@@ -8,8 +8,6 @@
 #include <netinet/in.h>
 #include <unistd.h>
 
-#define StatusCode(msg, code) ReturnStatusCode(msg, code, __FILE__, __LINE__)
-
 server::TcpServer& server::TcpServer::set_port(int port)
 {
   if(!_alreadyRunning)
@@ -38,6 +36,10 @@ ReturnStatusCode server::TcpServer::start_server()
   ((struct sockaddr_in*) _address)->sin_addr.s_addr = INADDR_ANY;
   //Set the port number to listen on
   ((struct sockaddr_in*) _address)->sin_port = htons(_port);
+
+  //Set REUSEADDR to true
+  int on = 1;
+  setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
   //Attempt to bind to the socket
   if(bind(_fd, (struct sockaddr*) _address, sizeof(struct sockaddr_in)) < 0)

@@ -1,5 +1,6 @@
 #include "stringproc.h"
 #include <string.h>
+#include <regex>
 bool operator==(std::string a, std::string b)
 {
   return !strcmp(a.c_str(), b.c_str());
@@ -44,25 +45,32 @@ bool server::contains(char find, std::string dict)
   return false;
 }
 
+bool iispace(char ch)
+{
+  return !(!isspace(ch) && ch != '\r' && ch != '\n');
+}
+
 std::string server::pad(std::string str)
 {
-  std::string in = str;
-  size_t i = 0;
-  while(isspace(in[i] || in[i] == '\r' || in[i] == '\n') && i < in.size()) i++;
-  in = in.substr(i, in.size());
+//  std::string in = str;
+//  size_t i = 0;
+//  while(i < in.size() && iispace(in[i])) i++;
+//  in = in.substr(i, in.size());
 
-  i = in.size();
-  while(isspace(in[i] || in[i] == '\r' || in[i] == '\n') && i != 0) i--;
-  in = in.substr(0, i);
+//  i = in.size();
+//  while(i != 0 && iispace(in[i])) i--;
+//  in = in.substr(0, i);
 
-  return in;
+//  return in;
+
+  return std::regex_replace(str, std::regex("^ +| +$|( ) +"), std::string("$1"));
 }
 
 std::string server::lpad(std::string in)
 {
   for(size_t i = 0; i < in.size(); i++)
   {
-    if(!isspace(in[i]) || in[i] == '\r' || in[i] == '\n') return in.substr(i, in.size());
+    if(!iispace(in[i])) return in.substr(i, in.size());
   }
   return "";
 }
@@ -72,7 +80,7 @@ std::string server::rpad(std::string in)
   long long i = in.size() - 1;
   for(i; i >= 0; i++)
   {
-    if(!isspace(in[i]) || in[i] == '\r' || in[i] == '\n') return in.substr(0, i);
+    if(!iispace(in[i])) return in.substr(0, i);
   }
   return "";
 }
