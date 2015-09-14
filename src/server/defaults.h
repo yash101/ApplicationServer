@@ -11,6 +11,11 @@
 #define CONFIGURATION_FILE_LOCATION "server_configuration.conf"
 #endif
 
+//This is where all the mime types configurations are stored
+#ifndef MIME_SERVER_DEFAULT_LOCATION
+#define MIME_SERVER_DEFAULT_LOCATION "mimes.dat"
+#endif
+
 //This is the default port. Can be reconfigured in the
 //	configuration file
 #ifndef DEFAULT_PORT
@@ -38,6 +43,10 @@
 //This is the file cache size (MB)
 #ifndef DEFAULT_FILE_CACHE_SIZE
 #define DEFAULT_FILE_CACHE_SIZE 768
+#endif
+
+#ifndef ENABLE_REQUEST_LOGGING_BY_DEFAULT
+#define ENABLE_REQUEST_LOGGING_BY_DEFAULT (true)
 #endif
 
 #endif // DEFAULTS_H

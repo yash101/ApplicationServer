@@ -122,8 +122,16 @@ ReturnStatusCode server::TcpServer::listener()
     connection->_connected_clients =
       &_connected_clients;
 
-    //Launch the worker in a separate thread
-    std::thread(&server::TcpServer::listenerProxy, this, (void*) connection).detach();
+    try
+    {
+      //Launch the worker in a separate thread
+      std::thread(&server::TcpServer::listenerProxy, this, (void*) connection).detach();
+    }
+    catch(std::exception& e)
+    {
+      delete connection;
+      continue;
+    }
   }
 }
 

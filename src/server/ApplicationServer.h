@@ -1,6 +1,10 @@
 #ifndef APPLICATIONSERVER_H
 #define APPLICATIONSERVER_H
 #include "httpserver.h"
+
+//Holds the mime data
+#include "mimeserver.h"
+
 #include <string>
 #include <map>
 
@@ -8,6 +12,7 @@
 #ifndef DISABLE_LAMBDAS
 #include <functional>
 #endif
+
 
 typedef void (*ServerFunction_t)(server::HttpServerSession&);
 
@@ -22,6 +27,7 @@ protected:
 #endif
 
   static void static_handler(server::HttpServerSession& session);
+
 public:
   ApplicationServer();
 
@@ -29,7 +35,9 @@ public:
 #ifndef DISABLE_LAMBDAS
   void set_request_lambda(std::string regex, std::function<void(server::HttpServerSession& lambda)>);
 #endif
+
   void set_static(std::string regex);
 
+  server::MimeServer mime_server;
 };
 #endif // APPLICATIONSERVER_H

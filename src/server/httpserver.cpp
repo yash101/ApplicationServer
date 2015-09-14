@@ -1,5 +1,6 @@
 #include "httpserver.h"
 #include "stringproc.h"
+#include "entry.h"
 #define ENABLE_HTTP_SERVER_EXTRA_FUNCTIONS
 #include "httpserverextrafunctions.h"
 #include <sys/sendfile.h>
@@ -231,6 +232,7 @@ void server::HttpServer::check_request(server::HttpServerSession* session)
     }
   }
 
+  if(server::configuration().tryBool("request_logging_enable"));
   log("Processed request for:\n\tPath: "
     + session->UnprocessedPath
     + std::string("\n\tRequest Type: ")

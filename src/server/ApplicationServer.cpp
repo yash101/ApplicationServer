@@ -1,9 +1,12 @@
 #include "ApplicationServer.h"
 #include "stringproc.h"
+#include "entry.h"
+#include "defaults.h"
 #include <regex>
 #include <iostream>
 
-ApplicationServer::ApplicationServer()
+ApplicationServer::ApplicationServer() :
+  mime_server(server::configuration()["mime_file"].c_str())
 {}
 
 void ApplicationServer::set_request_function(std::string query, ServerFunction_t callback)

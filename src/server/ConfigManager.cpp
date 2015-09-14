@@ -27,6 +27,12 @@ void server::ConfigurationManager::LoadConfiguration()
   if(config["log_location"].size() == 0)
     config["log_location"] = LOG_FILE_DEFAULT_LOCATION;
 
+  if(config["mime_file"].size() == 0)
+    config["mime_file"] = MIME_SERVER_DEFAULT_LOCATION;
+
+  if(config["request_logging_enable"].size() == 0)
+    config["request_logging_enable"] = server::toString(ENABLE_REQUEST_LOGGING_BY_DEFAULT);
+
   config.flush();
   config.refresh();
 

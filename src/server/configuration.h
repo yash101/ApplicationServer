@@ -3,6 +3,7 @@
 
 #include <map>
 #include <string>
+#include <mutex>
 
 #include "core.h"
 
@@ -12,6 +13,7 @@ namespace server
   {
   private:
     const char* _file_location;
+    std::mutex _map_mutex;
     std::map<std::string, std::string> _map;
   public:
     Config();
