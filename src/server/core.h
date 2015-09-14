@@ -2,7 +2,13 @@
 #define RETURNSTATUSCODE_H
 #include <exception>
 #include <string>
+
+//Easier way to create a ReturnStatusCode. Uses preprocessor to automatically
+//	insert file and line
 #define StatusCode(msg, code) ReturnStatusCode(msg, code, __FILE__, __LINE__)
+
+
+//This class can be used to return a message, code, source file and line number.
 class ReturnStatusCode
 {
 private:
@@ -27,6 +33,7 @@ public:
   std::string toString();
 };
 
+//General purpose Exception which wraps ReturnStatusCode.
 class Exception : public std::exception
 {
 private:

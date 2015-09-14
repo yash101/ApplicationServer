@@ -1,10 +1,12 @@
 #ifndef HTTPSERVER_H
 #define HTTPSERVER_H
 #include "tcpserver.h"
+#include "logger.h"
 #include <string>
 #include <vector>
 #include <map>
 #include <stdio.h>
+#include <mutex>
 namespace server
 {
   class HttpServer;
@@ -40,6 +42,7 @@ namespace server
   class HttpServer : public server::TcpServer
   {
   private:
+
     void worker(server::TcpServerConnection* connection);
     void bad_request(server::HttpServerSession* session, Exception& exe);
     void process_request(server::HttpServerSession* session);
@@ -50,11 +53,20 @@ namespace server
 
     void check_session_response(server::HttpServerSession* session);
     void send_response(server::HttpServerSession* session);
+
+    server::Logger* logger;
+    void log(std::string str);
+
   protected:
+
     virtual void request_handler(HttpServerSession& session);
     virtual void websocket_handler(HttpSocketSession& session);
+
   public:
+
     HttpServer();
+    HttpServer& setLogger(server::Logger& logger);
+
   };
 
   class HttpResponse
@@ -85,7 +97,7 @@ namespace server
     std::map<std::string, std::string> incoming_headers;
     std::map<std::string, std::string> headers;
     std::map<std::string, server::HttpCookie> incoming_cookies;
-    std::map<std::string, server::HttpCookie> cookies;
+    std::map<std::string, std::string> cookies;
   };
 
   class HttpSocketSession

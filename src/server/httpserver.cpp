@@ -1,14 +1,17 @@
 #include "httpserver.h"
 #include "stringproc.h"
+#define ENABLE_HTTP_SERVER_EXTRA_FUNCTIONS
+#include "httpserverextrafunctions.h"
 #include <sys/sendfile.h>
 #include <unistd.h>
 #include <signal.h>
 
 #ifndef MAX_HTTP_LINE_LENGTH
-#define MAX_HTTP_LINE_LENGTH (16384)
+#define MAX_HTTP_LINE_LENGTH (65536)
 #endif
 
-server::HttpServer::HttpServer()
+server::HttpServer::HttpServer() :
+  logger(NULL)
 {
 }
 
@@ -29,6 +32,9 @@ void server::HttpServer::worker(server::TcpServerConnection* connection)
   catch(Exception& e)
   {
     bad_request(&session, e);
+  }
+  catch(std::bad_alloc& e)
+  {
   }
 }
 
@@ -53,11 +59,13 @@ void server::HttpServer::process_request(server::HttpServerSession* session)
   //Break down the string into its parts
   std::vector<std::string> parts = server::split(str, ' ');
 
-  if(parts.size() < 3) raise(SIGABRT);
+  //Chech if we dont have all the parts
+  if(parts.size() < 3) throw Exception(StatusCode("Could not understand first line.", parts.size()));
 
   //Begin processing first line
   if(parts[0] == "POST") session->RequestType = POST;
-  else session->RequestType = GET;
+  else if(parts[0] == "GET") session->RequestType = GET;
+  else throw Exception(StatusCode("Unimplemented function.", -1));
 
   //Process the path
   parse_get_queries(session, parts);
@@ -106,7 +114,7 @@ void server::HttpServer::process_request(server::HttpServerSession* session)
         pos = server::find(cookies[i], '=');
 
         //Separate the name from it's value
-        key = cookies[i].substr(0, pos - 1);
+        key = cookies[i].substr(0, pos);
         value = cookies[i].substr(pos + 1, cookies[i].size());
 
         //Remove whitespace. It's dirty
@@ -114,7 +122,7 @@ void server::HttpServer::process_request(server::HttpServerSession* session)
         server::ipad(value);
 
         //Set the cookie into the session object
-        session->incoming_cookies[key] = server::HttpCookie(value);
+        session->incoming_cookies[server::decodeURI(key)] = server::HttpCookie(server::decodeURI(value));
       }
     }
     else
@@ -137,7 +145,7 @@ void server::HttpServer::parse_get_queries(server::HttpServerSession* session, s
   }
   else
   {
-    session->Path = parts[1].substr(0, loc - 1);
+    session->Path = parts[1].substr(0, loc);
     std::string qstr = parts[1].substr(loc + 1, parts[1].size());
     std::vector<std::string> queries = server::split(qstr, '&');
     for(size_t i = 0; i < queries.size(); i++)
@@ -147,11 +155,11 @@ void server::HttpServer::parse_get_queries(server::HttpServerSession* session, s
       if(pos == 0) continue;
       if(pos < 0)
       {
-        session->get[queries[i]] = "";
+        session->get[server::decodeURI(queries[i])] = "";
       }
       else
       {
-        session->get[queries[i].substr(0, pos - 1)] = queries[i].substr(pos - 1, queries[i].size());
+        session->get[server::decodeURI(queries[i].substr(0, pos))] = server::decodeURI(queries[i].substr(pos + 1, queries[i].size()));
       }
     }
   }
@@ -181,7 +189,7 @@ void server::HttpServer::parse_post_queries(server::HttpServerSession* session)
         //Position of the current stream
         size_t i = 0;
 
-        while(true)
+        while(i < len)
         {
           while(i < len && key.back() != '=')
           {
@@ -189,7 +197,9 @@ void server::HttpServer::parse_post_queries(server::HttpServerSession* session)
             i++;
           }
 
-          while(i < len && value.back() != ';')
+          key.pop_back();
+
+          while(i < len && value.back() != '&')
           {
             value += (char) session->connection->read();
             i++;
@@ -197,9 +207,9 @@ void server::HttpServer::parse_post_queries(server::HttpServerSession* session)
 
           server::HttpPost pt;
           pt.type = ftype;
-          pt.value = value;
+          pt.value = server::decodeURI(value);
 
-          session->post[key] = pt;
+          session->post[server::decodeURI(key)] = pt;
         }
       }
     }
@@ -220,6 +230,15 @@ void server::HttpServer::check_request(server::HttpServerSession* session)
       throw Exception(StatusCode("No host provided. Routing failed.", 500));
     }
   }
+
+  log("Processed request for:\n\tPath: "
+    + session->UnprocessedPath
+    + std::string("\n\tRequest Type: ")
+    + ((session->RequestType == GET) ? "GET" : "POST")
+    + std::string("\n\tProtocol Version: ")
+    + ((session->ProtocolVersion == HTTP_1_0) ? "HTTP/1.0 (HTTP 1.0)" : "HTTP/1.1 (HTTP 1.1)")
+    + std::string("\n")
+  );
 }
 
 void server::HttpServer::prepare_session(server::HttpServerSession* session)
@@ -233,6 +252,7 @@ void server::HttpServer::check_session_response(server::HttpServerSession* sessi
   if(session->headers["content-type"].size() == 0) session->headers["content-type"] = "text/html";
   if(session->Response.type == FILE)
   {
+    if(session->Response.ftype == NULL || ftell(session->Response.ftype) < 0) throw Exception(StatusCode("Attempting to send a file; file not open. Aborting.", -1));
     fseek(session->Response.ftype, 0, SEEK_END);
     session->headers["content-length"] = server::toString(ftell(session->Response.ftype));
     fseek(session->Response.ftype, 0, SEEK_SET);
@@ -259,20 +279,13 @@ void server::HttpServer::send_response(server::HttpServerSession* session)
   }
 
   //Send all cookies
-  for(std::map<std::string, server::HttpCookie>::const_iterator it =
+  for(std::map<std::string, std::string>::const_iterator it =
         session->cookies.begin();
       it != session->cookies.end();
       ++it
   )
   {
-    session->connection->write("Cookie: " +
-      server::encodeURI(it->first) +
-      "=" +
-      server::encodeURI(it->second.value) +
-      " ; path=" +
-      server::encodeURI(it->second.path) +
-      "\r\n"
-    );
+    session->connection->write("Set-Cookie: " + server::encodeURI(it->first) + "=" + server::encodeURI(it->second) + "\r\n");
   }
 
   session->connection->write("\r\n");
@@ -297,19 +310,46 @@ void server::HttpServer::send_response(server::HttpServerSession* session)
       throw Exception(StatusCode("Unable to complete file transfer!", ret));
     else if(ret < len)
       throw Exception(StatusCode("Write terminated prematurely", ret));
+
+    session->connection->write("\r\n\r\n");
   }
 }
 
-
 void server::HttpServer::bad_request(server::HttpServerSession* session, Exception& e)
 {
+  log(e.getStatusCode().toString());
+
+  session->connection->write("HTTP/1.0 500 Internal Server Error\r\nContent-Type: text/html\r\n");
+  std::stringstream str;
+  str << "<!DOCTYPE html>" << std::endl;
+  str << "<html><head><title>Internal Server Error: " << e.what() << "</title></head>";
+  str << "<body>";
+    str << "<h1><center>Internal Server Error</center></h1>";
+    str << "<b>Issue: The server encountered an error processing your request.</b>";
+    str << "<h2>Error Traceback:</h2>";
+    str << "<pre>" << e.getStatusCode().toString() << "</pre>";
+  str << "</body>";
+  str << "</html>";
+  session->connection->write("Content-Length: " + server::toString(str.str().size()) + "\r\n\r\n");
+  session->connection->write(str.str());
 }
 
 void server::HttpServer::request_handler(HttpServerSession& session)
 {
-  session.Response.type = STRING;
-  session.Response.stype = "<!DOCTYPE html>\n<html><body><h1>Hello World!</h1></body></html>";
+  getDefaultHomePage(&session);
 }
 
 void server::HttpServer::websocket_handler(server::HttpSocketSession& session)
 {}
+
+server::HttpServer& server::HttpServer::setLogger(server::Logger& log)
+{
+  logger = &log;
+  return (*this);
+}
+
+void server::HttpServer::log(std::string str)
+{
+  if(logger != NULL)
+    (*logger)(str.c_str());
+}

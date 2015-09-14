@@ -3,6 +3,7 @@
 #include "core.h"
 #include <string>
 #include <netinet/in.h>
+#include <mutex>
 namespace server
 {
   class TcpServer;
@@ -20,12 +21,26 @@ namespace server
     ReturnStatusCode listener();
     void listenerProxy(void* connection);
     virtual void worker(server::TcpServerConnection* connection);
+
+    size_t _connected_clients;
+    size_t _max_connected_clients;
+
+    std::mutex _connected_clients_mutex;
+    std::mutex _max_connected_clients_mutex;
+
   public:
     TcpServer();
     ~TcpServer();
 
     server::TcpServer& set_port(int port);
     ReturnStatusCode start_server();
+
+    server::TcpServer& setReadTimeoutMicroSeconds(size_t usec);
+    server::TcpServer& setReadTimeoutSeconds(size_t sec);
+
+    server::TcpServer& setMaxConnectedClients(size_t max);
+
+    struct timeval _timeout;
   };
 
   class TcpServerConnection
@@ -38,6 +53,9 @@ namespace server
     int fd;
     struct sockaddr_in* address;
     server::TcpServer* server;
+
+    std::mutex* _external_connected_clients_lock;
+    size_t* _connected_clients;
 
     char read();
     std::string read(size_t mxlen);

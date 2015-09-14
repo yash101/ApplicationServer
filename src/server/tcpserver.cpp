@@ -74,6 +74,21 @@ ReturnStatusCode server::TcpServer::listener()
       continue;
     }
 
+    while(true)
+    {
+      //Check if we are allowed to accept another connection
+      _max_connected_clients_mutex.lock();
+      size_t max = _max_connected_clients;
+      _max_connected_clients_mutex.unlock();
+
+      _connected_clients_mutex.lock();
+      size_t connected = _connected_clients;
+      _connected_clients_mutex.unlock();
+
+      if(max != 0 && connected < max)
+        break;
+    }
+
     //Accept a connection
     connection->fd = accept(
       _fd,
@@ -88,6 +103,24 @@ ReturnStatusCode server::TcpServer::listener()
       delete connection;
       continue;
     }
+
+    //Set the read timeout
+    if(setsockopt(connection->fd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval*) &_timeout, sizeof(struct timeval)))
+    {
+      delete connection;
+      continue;
+    }
+
+    //Increment the connected client tracker
+    _connected_clients_mutex.lock();
+    _connected_clients++;
+    _connected_clients_mutex.unlock();
+
+    //Give the connection access to the client tracker
+    connection->_external_connected_clients_lock =
+      &_connected_clients_mutex;
+    connection->_connected_clients =
+      &_connected_clients;
 
     //Launch the worker in a separate thread
     std::thread(&server::TcpServer::listenerProxy, this, (void*) connection).detach();
@@ -117,15 +150,35 @@ void server::TcpServer::worker(server::TcpServerConnection* connection)
   connection->write("Hello, " + std::string(buffer) + "! Check the docs on how to use this socket server!\n");
 }
 
+server::TcpServer& server::TcpServer::setReadTimeoutMicroSeconds(size_t usec)
+{
+  _timeout.tv_usec = usec;
+  return (*this);
+}
 
+server::TcpServer& server::TcpServer::setReadTimeoutSeconds(size_t sec)
+{
+  _timeout.tv_sec = sec;
+  return (*this);
+}
 
-
+server::TcpServer& server::TcpServer::setMaxConnectedClients(size_t max)
+{
+  _max_connected_clients_mutex.lock();
+  _max_connected_clients = max;
+  _max_connected_clients_mutex.unlock();
+  return (*this);
+}
 
 server::TcpServer::TcpServer() :
   _address((struct sockaddr_in*) new struct sockaddr_in),
   _port(0),
-  _alreadyRunning(false)
+  _alreadyRunning(false),
+  _fd(-1),
+  _connected_clients(0),
+  _max_connected_clients(0)
 {
+  memset(&_timeout, 0, sizeof(struct timeval));
 }
 
 server::TcpServer::~TcpServer()
@@ -136,7 +189,9 @@ server::TcpServer::~TcpServer()
 }
 
 server::TcpServerConnection::TcpServerConnection() :
-  address(NULL)
+  address(NULL),
+  _external_connected_clients_lock(NULL),
+  _connected_clients(NULL)
 {
   address = new struct sockaddr_in;
   memset(address, 0, sizeof(struct sockaddr_in));
@@ -147,6 +202,15 @@ server::TcpServerConnection::~TcpServerConnection()
   delete (struct sockaddr_in*) address;
   shutdown(fd, SHUT_RDWR);
   close(fd);
+
+  if(_external_connected_clients_lock != NULL &&
+     _connected_clients != NULL
+  )
+  {
+    _external_connected_clients_lock->lock();
+    (*_connected_clients)--;
+    _external_connected_clients_lock->unlock();
+  }
 }
 
 char server::TcpServerConnection::read()
@@ -154,6 +218,8 @@ char server::TcpServerConnection::read()
   char ch;
   if(::recv(fd, &ch, sizeof(char), MSG_NOSIGNAL) <= 0)
   {
+    if(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS)
+      throw Exception(StatusCode("Socket read timed out", errno));
     throw Exception(StatusCode("Unable to read from pipe", errno));
   }
 
@@ -175,6 +241,8 @@ std::string server::TcpServerConnection::read(size_t mxlen)
   int ret;
   if((ret = ::recv(fd, buffer, mxlen, MSG_NOSIGNAL) <= 0))
   {
+    if(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS)
+      throw Exception(StatusCode("Socket read timed out", errno));
     throw Exception(StatusCode("Unable to read from socket", ret));
   }
 
@@ -190,6 +258,8 @@ int server::TcpServerConnection::read(void* buffer, size_t len)
   int ret;
   if((ret = ::recv(fd, buffer, len, MSG_NOSIGNAL) <= 0))
   {
+    if(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS)
+      throw Exception(StatusCode("Socket read timed out", errno));
     throw Exception(StatusCode("Unable to read from socket", ret));
   }
   return ret;

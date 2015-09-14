@@ -11,12 +11,13 @@ server::HttpCookie::HttpCookie(std::string value) :
 {}
 
 server::HttpResponse::HttpResponse() :
-  type(STRING)
+  type(STRING),
+  ftype(NULL)
 {}
 
 server::HttpPost::~HttpPost()
 {
-  if(type == FILE)
+  if(type == FILE && file != NULL)
   {
     fclose(file);
   }
@@ -24,7 +25,7 @@ server::HttpPost::~HttpPost()
 
 server::HttpResponse::~HttpResponse()
 {
-  if(type == FILE)
+  if(type == FILE && ftype != NULL)
     fclose(ftype);
 }
 

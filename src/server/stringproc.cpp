@@ -52,37 +52,38 @@ bool iispace(char ch)
 
 std::string server::pad(std::string str)
 {
-//  std::string in = str;
-//  size_t i = 0;
-//  while(i < in.size() && iispace(in[i])) i++;
-//  in = in.substr(i, in.size());
-
-//  i = in.size();
-//  while(i != 0 && iispace(in[i])) i--;
-//  in = in.substr(0, i);
-
-//  return in;
-
-  return std::regex_replace(str, std::regex("^ +| +$|( ) +"), std::string("$1"));
+  return server::lpad(server::rpad(str));
 }
 
 std::string server::lpad(std::string in)
 {
-  for(size_t i = 0; i < in.size(); i++)
-  {
-    if(!iispace(in[i])) return in.substr(i, in.size());
-  }
-  return "";
+  std::string out = in;
+
+  auto it = std::find_if(
+    out.begin(),
+    out.end() ,
+    [](char ch)
+    {
+      return !std::isspace<char>(ch, std::locale::classic());
+    }
+  );
+
+  out.erase(out.begin(), it);
+  return out;
 }
 
 std::string server::rpad(std::string in)
 {
-  long long i = in.size() - 1;
-  for(i; i >= 0; i++)
-  {
-    if(!iispace(in[i])) return in.substr(0, i);
-  }
-  return "";
+  std::string str = in;
+  auto it = std::find_if(str.rbegin(),
+    str.rend(),
+    [](char ch)
+    {
+      return !std::isspace<char>(ch, std::locale::classic());
+    }
+  );
+  str.erase( it.base() , str.end() );
+  return str;
 }
 
 void server::ipad(std::string& in)
@@ -177,6 +178,7 @@ bool server::getline(std::string& buffer, std::string end, std::istream& stream)
 
 std::vector<std::string> server::split(std::string stream, char f)
 {
+  if(stream.size() == 0) return std::vector<std::string>();
   std::string str = stream;
   std::vector<std::string> out;
   long ocurrence = 0;

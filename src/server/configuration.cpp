@@ -1,0 +1,166 @@
+#include "configuration.h"
+#include "stringproc.h"
+#include <stdio.h>
+#include <iostream>
+#include <fstream>
+
+//Declaring the uriencode functions to avoid a few conflicts
+namespace server
+{
+  std::string encodeURI(std::string str);
+  std::string decodeURI(std::string str);
+}
+
+server::Config::Config() :
+  _file_location("")
+{}
+
+server::Config::Config(server::Config& config) :
+  _file_location(config._file_location),
+  _map(config._map)
+{}
+
+server::Config::Config(const char* file_location) :
+  _file_location(file_location)
+{
+  this->refresh();
+}
+
+server::Config::Config(std::string file_location) :
+  _file_location(file_location.c_str())
+{
+  this->refresh();
+}
+
+std::string& server::Config::operator[](std::string key)
+{
+  return _map[key];
+}
+
+std::string& server::Config::operator()(std::string key)
+{
+  return _map[key];
+}
+
+std::string& server::Config::access(std::string key)
+{
+  return _map[key];
+}
+
+std::string& server::Config::operator[](const char* key)
+{
+  return _map[key];
+}
+
+std::string& server::Config::operator()(const char* key)
+{
+  return _map[key];
+}
+
+std::string& server::Config::access(const char* key)
+{
+  return _map[key];
+}
+
+const std::map<std::string, std::string> server::Config::getMap()
+{
+  return _map;
+}
+
+void server::Config::put(std::string key, std::string value)
+{
+  _map[key] = value;
+}
+
+const std::string server::Config::get(std::string key)
+{
+  return _map[key];
+}
+
+void server::Config::remove(std::string key)
+{
+  _map.erase(key);
+}
+
+void server::Config::refresh()
+{
+  std::string buffer;
+
+  std::ifstream fin(_file_location, std::ios::in);
+  if(!fin.is_open())
+  {
+    std::ofstream fout(_file_location, std::ios::out | std::ios::trunc);
+    fout.close();
+    fin.open(_file_location, std::ios::in);
+  }
+
+  if(!fin.is_open()) throw Exception(StatusCode("File has not been opened!", -1));
+  _map.clear();
+
+  while(std::getline(fin, buffer, '\n'))
+  {
+    server::ipad(buffer);
+    if(buffer[0] == '#') continue;
+
+    size_t pos = buffer.find_last_of('#');
+    if(pos != std::string::npos)
+    {
+      buffer = buffer.substr(0, pos);
+    }
+
+    server::ipad(buffer);
+
+    if(buffer.size() == 0) continue;
+
+    std::string key;
+    std::string value;
+
+    size_t del = server::find(buffer, ':');
+    if(del < 0 || buffer[buffer.size()] == ':')
+    {
+      if(buffer[buffer.size()] == ':')
+        buffer = buffer.substr(0, buffer.size() - 1);
+      server::ipad(buffer);
+      key = buffer;
+      value = "";
+    }
+    else
+    {
+      key = buffer.substr(0, del);
+      value = buffer.substr(del + 1, buffer.size());
+      server::ipad(key);
+      server::ipad(value);
+    }
+
+    if(value[0] == '\"' && value[value.size() - 1] == '\"')
+      value = value.substr(1, value.size() - 2);
+    if(key[0] == '\"' && key[key.size() - 1] == '\"')
+      key = key.substr(1, key.size() - 2);
+
+    _map[server::decodeURI(key)] = server::decodeURI(value);
+  }
+  fin.close();
+}
+
+void server::Config::flush()
+{
+  FILE* fd = fopen(_file_location, "w");
+  if(fd == NULL)
+    throw Exception(StatusCode("Unable to open file for writing", -1));
+  for(std::map<std::string, std::string>::const_iterator it = _map.begin(); it != _map.end(); ++it)
+  {
+    fprintf(fd, "\"%s\": \"%s\"\n", server::encodeURI(it->first).c_str(), server::encodeURI(it->second).c_str());
+  }
+
+  fclose(fd);
+}
+
+const char* server::Config::getFilename()
+{
+  return _file_location;
+}
+
+void server::Config::setFilename(const char* location)
+{
+  _file_location = location;
+}
