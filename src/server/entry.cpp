@@ -12,7 +12,7 @@ int main(int argc, char** argv)
   server.set_port(1234);
   server.setLogger(server::log);
   server.setMaxConnectedClients(16);
-  server.setReadTimeoutSeconds(1);
+  server.setReadTimeoutSeconds(10);
 //  server.set_request_lambda("/", [](server::HttpServerSession& session)
 //  {
 //    session.Response.type = server::STRING;

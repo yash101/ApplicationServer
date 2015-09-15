@@ -3,7 +3,6 @@
 #include "entry.h"
 #include "defaults.h"
 #include <regex>
-#include <iostream>
 
 ApplicationServer::ApplicationServer() :
   mime_server(server::configuration()["mime_file"].c_str())
@@ -64,9 +63,9 @@ void ApplicationServer::static_handler(server::HttpServerSession& session)
       continue;
     out.append(parts[i] + "/");
   }
-  out.pop_back();
+  if(out.size() > 0)
+    out.pop_back();
 
   session.Response.type = server::FILE;
-  std::cout << out << std::endl;
   session.Response.ftype = fopen(out.c_str(), "r");
 }

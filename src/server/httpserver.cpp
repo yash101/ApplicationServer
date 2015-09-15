@@ -6,6 +6,7 @@
 #include <sys/sendfile.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 
 #ifndef MAX_HTTP_LINE_LENGTH
 #define MAX_HTTP_LINE_LENGTH (65536)
@@ -53,6 +54,7 @@ void server::HttpServer::process_request(server::HttpServerSession* session)
 
   //Convert to std string and then pad
   std::string str = flbuf;
+
   //Pop back extra '\r' or '\n's
   if(str.back() == '\r' || str.back() == '\n') str.pop_back();
   server::ipad(str);
@@ -308,7 +310,7 @@ void server::HttpServer::send_response(server::HttpServerSession* session)
 
     int ret = sendfile(session->connection->fd, fileno(session->Response.ftype), 0, len);
 
-    if(ret < 0)
+    if(ret <= 0)
       throw Exception(StatusCode("Unable to complete file transfer!", ret));
     else if(ret < len)
       throw Exception(StatusCode("Write terminated prematurely", ret));
