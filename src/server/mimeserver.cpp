@@ -59,6 +59,7 @@ void server::MimeServer::load()
     configuration["jpg"] = "image/jpeg";
     configuration["jpeg"] = "image/jpeg";
     configuration["gif"] = "image/gif";
+    configuration["php"] = "text/html";
   }
   const std::map<std::string, std::string> mp = configuration.getMap();
   for(std::map<std::string, std::string>::const_iterator it = mp.begin(); it != mp.end(); ++it)

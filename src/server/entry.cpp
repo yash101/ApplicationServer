@@ -1,6 +1,7 @@
 #include "entry.h"
 #include "server.h"
 #include <string.h>
+#include <sys/stat.h>
 
 int main(int argc, char** argv)
 {
@@ -19,6 +20,8 @@ int main(int argc, char** argv)
       }
     }
   }
+
+  mkdir("config", S_IRWXU | S_IRWXG | S_IROTH);
 
   server::configuration.LoadConfiguration();
 

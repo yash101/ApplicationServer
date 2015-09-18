@@ -3,12 +3,12 @@
 
 //This is the default file where the log is stored
 #ifndef LOG_FILE_DEFAULT_LOCATION
-#define LOG_FILE_DEFAULT_LOCATION "app_log.log"
+#define LOG_FILE_DEFAULT_LOCATION "config/ApplicationServer.log"
 #endif
 
 //This is the default file where the configuration is stored
 #ifndef CONFIGURATION_FILE_LOCATION
-#define CONFIGURATION_FILE_LOCATION "server_configuration.conf"
+#define CONFIGURATION_FILE_LOCATION "config/main_server_configuration.conf"
 #endif
 
 //This is where all the mime types configurations are stored
@@ -31,7 +31,7 @@
 //	is exceeded, the connection is closed and an internal server
 //	error is sent. This is to free resources from slow clients
 #ifndef DEFAULT_HTTP_SOCKET_TIMEOUT
-#define DEFAULT_HTTP_SOCKET_TIMEOUT 1
+#define DEFAULT_HTTP_SOCKET_TIMEOUT 30
 #endif
 
 //This is the maximum number of connections allowed to be processed

@@ -24,13 +24,23 @@ server::Config::Config(server::Config& config) :
 server::Config::Config(const char* file_location) :
   _file_location(file_location)
 {
-  this->refresh();
+  try
+  {
+    this->refresh();
+  }
+  catch(Exception& e)
+  {}
 }
 
 server::Config::Config(std::string file_location) :
   _file_location(file_location.c_str())
 {
-  this->refresh();
+  try
+  {
+    this->refresh();
+  }
+  catch(Exception& e)
+  {}
 }
 
 std::string& server::Config::operator[](std::string key)
@@ -101,12 +111,10 @@ void server::Config::refresh()
   std::ifstream fin(_file_location, std::ios::in);
   if(!fin.is_open())
   {
-    std::ofstream fout(_file_location, std::ios::out | std::ios::trunc);
-    fout.close();
-    fin.open(_file_location, std::ios::in);
+    _map.clear();
+    return;
   }
 
-  if(!fin.is_open()) throw Exception(StatusCode("File has not been opened!", -1));
   _map.clear();
 
   while(std::getline(fin, buffer, '\n'))
