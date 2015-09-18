@@ -11,6 +11,7 @@ namespace server
     server::Config config;
   public:
     ConfigurationManager();
+    ConfigurationManager(const char* conf_loc);
     void LoadConfiguration();
 
     server::Config& configuration();

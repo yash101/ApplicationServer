@@ -16,6 +16,11 @@
 #define MIME_SERVER_DEFAULT_LOCATION "mimes.dat"
 #endif
 
+//These are the default indices, in order
+#ifndef DEFAULT_INDICES
+#define DEFAULT_INDICES "index.html,index.htm"
+#endif
+
 //This is the default port. Can be reconfigured in the
 //	configuration file
 #ifndef DEFAULT_PORT
@@ -45,6 +50,7 @@
 #define DEFAULT_FILE_CACHE_SIZE 768
 #endif
 
+//Enable request logs
 #ifndef ENABLE_REQUEST_LOGGING_BY_DEFAULT
 #define ENABLE_REQUEST_LOGGING_BY_DEFAULT (true)
 #endif

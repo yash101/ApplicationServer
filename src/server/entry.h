@@ -2,6 +2,7 @@
 #define ENTRY_H
 #include "ConfigManager.h"
 #include "logger.h"
+#include "ApplicationServer.h"
 
 //Entry point of the server code
 int main(int argc, char** argv);
@@ -23,4 +24,5 @@ namespace server
   extern Logger log;
 }
 
+extern ApplicationServer AppServer;
 #endif // ENTRY_H

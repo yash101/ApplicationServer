@@ -306,14 +306,36 @@ void server::HttpServer::send_response(server::HttpServerSession* session)
     int ffd = fileno(session->Response.ftype);
 
     if(ffd < 0)
+    {
       throw Exception(StatusCode("Unable to read the file to be sent!", ffd));
+    }
 
     int ret = sendfile(session->connection->fd, fileno(session->Response.ftype), 0, len);
 
-    if(ret <= 0)
+    if(ret < 0)
+    {
       throw Exception(StatusCode("Unable to complete file transfer!", ret));
+    }
     else if(ret < len)
-      throw Exception(StatusCode("Write terminated prematurely", ret));
+    {
+      //Holds 16 KB chunks of data
+      char buffer[16384];
+      size_t nreps = len / 16384;
+      size_t carry = len % 16384;
+
+      for(size_t i = 0; i < nreps; i++)
+      {
+        if(fread(buffer, 16384, 1, session->Response.ftype) > 0)
+        {
+          session->connection->write(buffer, 16384);
+        }
+      }
+
+      if(fread(buffer, carry, 1, session->Response.ftype) > 0)
+      {
+        session->connection->write(buffer, carry);
+      }
+    }
 
     session->connection->write("\r\n\r\n");
   }

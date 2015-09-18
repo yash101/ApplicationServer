@@ -37,7 +37,7 @@ public:
 #endif
 
   void set_static(std::string regex);
-
-  server::MimeServer mime_server;
 };
+
+extern server::MimeServer mime_server;
 #endif // APPLICATIONSERVER_H

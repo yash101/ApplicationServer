@@ -8,6 +8,11 @@ server::ConfigurationManager::ConfigurationManager() :
 {
 }
 
+server::ConfigurationManager::ConfigurationManager(const char* loc) :
+  config(loc)
+{
+}
+
 void server::ConfigurationManager::LoadConfiguration()
 {
   //Check if the port number has been set
@@ -32,6 +37,12 @@ void server::ConfigurationManager::LoadConfiguration()
 
   if(config["request_logging_enable"].size() == 0)
     config["request_logging_enable"] = server::toString(ENABLE_REQUEST_LOGGING_BY_DEFAULT);
+
+  if(config["indices"].size() == 0)
+    config["indices"] = DEFAULT_INDICES;
+
+  if(config["max_connected_clients"].size() == 0)
+    config["max_connected_clients"] = server::toString(DEFAULT_HTTP_SERVER_MAX_CONNECTIONS);
 
   config.flush();
   config.refresh();

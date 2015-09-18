@@ -21,9 +21,9 @@ server::Mime_T& server::MimeServer::getMime(std::string file_extension)
   size_t pos = file_extension.find_last_of('.');
   if(pos != std::string::npos)
   {
-    return mimestore[file_extension.substr(pos + 1, file_extension.size())];
+    return mimestore[server::tolower(file_extension.substr(pos + 1, file_extension.size()))];
   }
-  return mimestore[file_extension];
+  return mimestore[server::tolower(file_extension)];
 }
 
 server::Mime_T& server::MimeServer::operator()(std::string file_extension)
@@ -31,9 +31,9 @@ server::Mime_T& server::MimeServer::operator()(std::string file_extension)
   size_t pos = file_extension.find_last_of('.');
   if(pos != std::string::npos)
   {
-    return mimestore[file_extension.substr(pos + 1, file_extension.size())];
+    return mimestore[server::tolower(file_extension.substr(pos + 1, file_extension.size()))];
   }
-  return mimestore[file_extension];
+  return mimestore[server::tolower(file_extension)];
 }
 
 server::Mime_T& server::MimeServer::operator[](std::string file_extension)
@@ -41,14 +41,25 @@ server::Mime_T& server::MimeServer::operator[](std::string file_extension)
   size_t pos = file_extension.find_last_of('.');
   if(pos != std::string::npos)
   {
-    return mimestore[file_extension.substr(pos + 1, file_extension.size())];
+    return mimestore[server::tolower(file_extension.substr(pos + 1, file_extension.size()))];
   }
-  return mimestore[file_extension];
+  return mimestore[server::tolower(file_extension)];
 }
 
 void server::MimeServer::load()
 {
   configuration.refresh();
+  if(configuration.getMap().size() == 0)
+  {
+    configuration["html"] = "text/html";
+    configuration["htm"] = "text/html";
+    configuration["js"] = "text/javascript";
+    configuration["css"] = "text/css";
+    configuration["png"] = "image/png";
+    configuration["jpg"] = "image/jpeg";
+    configuration["jpeg"] = "image/jpeg";
+    configuration["gif"] = "image/gif";
+  }
   const std::map<std::string, std::string> mp = configuration.getMap();
   for(std::map<std::string, std::string>::const_iterator it = mp.begin(); it != mp.end(); ++it)
   {

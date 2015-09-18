@@ -1,25 +1,35 @@
 #include "entry.h"
-#include "ApplicationServer.h"
+#include "server.h"
+#include <string.h>
 
 int main(int argc, char** argv)
 {
   ProgramArguments.argc = argc;
   ProgramArguments.argv = argv;
 
+  for(int i = 1; i < argc; i++)
+  {
+    if(!strcmp(argv[i], "-c") || !strcmp(argv[i], "--configuration-location"))
+    {
+      if(i + 1 < argc)
+        server::configuration().setFilename(argv[++i]);
+      else
+      {
+        fprintf(stderr, "-c || --configuration-location followed by null!\n");
+      }
+    }
+  }
+
   server::configuration.LoadConfiguration();
 
-  ApplicationServer server;
-  server.set_port(1234);
-  server.setLogger(server::log);
-  server.setMaxConnectedClients(16);
-  server.setReadTimeoutSeconds(10);
-//  server.set_request_lambda("/", [](server::HttpServerSession& session)
-//  {
-//    session.Response.type = server::STRING;
-//    session.Response.stype = "<DOCTYPE html>\n<html><body><h1>Hello World!</h1></body></html>";
-//  });
-  server.set_static("/(.*)");
-  server::log(server.start_server().toString().c_str());
+  AppServer.set_port(atoi(server::configuration()["portno"].c_str()));
+  AppServer.setReadTimeoutSeconds(atoi(server::configuration()["socket_timeout"].c_str()));
+  AppServer.setLogger(server::log);
+  AppServer.setMaxConnectedClients(atoi(server::configuration()["max_connected_clients"].c_str()));
+
+  server_setup();
+
+  AppServer.start_server();
 
   return 0;
 }
@@ -31,3 +41,4 @@ ProgramArguments_t ProgramArguments;
 //		file to other classes
 server::ConfigurationManager server::configuration;
 server::Logger server::log;
+ApplicationServer AppServer;
