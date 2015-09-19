@@ -14,29 +14,34 @@
 #endif
 
 
-typedef void (*ServerFunction_t)(server::HttpServerSession&);
+typedef bool (*ServerFunction_t)(server::HttpServerSession&);
 
 class ApplicationServer : public server::HttpServer
 {
 protected:
-  void request_handler(server::HttpServerSession& session);
 
   std::map<std::string, ServerFunction_t> _functions;
+  bool handle404(server::HttpServerSession& session);
+
 #ifndef DISABLE_LAMBDAS
-  std::map<std::string, std::function<void(server::HttpServerSession&)> > _lambdas;
+  std::map<std::string, std::function<bool(server::HttpServerSession&)> > _lambdas;
 #endif
 
-  static void static_handler(server::HttpServerSession& session);
+  static bool static_handler(server::HttpServerSession& session);
+  void request_handler(server::HttpServerSession& session);
+  void error_handler(int code, server::HttpServerSession& session);
 
 public:
+
   ApplicationServer();
 
   void set_request_function(std::string regex, ServerFunction_t function);
 #ifndef DISABLE_LAMBDAS
-  void set_request_lambda(std::string regex, std::function<void(server::HttpServerSession& lambda)>);
+  void set_request_lambda(std::string regex, std::function<bool (server::HttpServerSession&)>);
 #endif
 
   void set_static(std::string regex);
+
 };
 
 extern server::MimeServer mime_server;

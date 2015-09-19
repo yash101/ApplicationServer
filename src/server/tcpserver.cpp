@@ -85,7 +85,7 @@ ReturnStatusCode server::TcpServer::listener()
       size_t connected = _connected_clients;
       _connected_clients_mutex.unlock();
 
-      if(max != 0 && connected < max)
+      if(max == 0 || connected < max)
         break;
     }
 
