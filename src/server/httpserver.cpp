@@ -3,10 +3,14 @@
 #include "entry.h"
 #define ENABLE_HTTP_SERVER_EXTRA_FUNCTIONS
 #include "httpserverextrafunctions.h"
+#include <string.h>
+
+#ifndef _WIN32
+
 #include <sys/sendfile.h>
 #include <unistd.h>
-#include <signal.h>
-#include <string.h>
+
+#endif
 
 #ifndef MAX_HTTP_LINE_LENGTH
 #define MAX_HTTP_LINE_LENGTH (65536)
@@ -310,7 +314,11 @@ void server::HttpServer::send_response(server::HttpServerSession* session)
       throw Exception(StatusCode("Unable to read the file to be sent!", ffd));
     }
 
+#ifndef _WIN32
     int ret = sendfile(session->connection->fd, fileno(session->Response.ftype), 0, len);
+#else
+    int ret = 0;
+#endif;
 
     if(ret < 0)
     {

@@ -2,8 +2,18 @@
 #define TCPSERVER_H
 #include "core.h"
 #include <string>
-#include <netinet/in.h>
 #include <mutex>
+
+#ifndef _WIN32
+
+#include <netinet/in.h>
+
+#else
+
+#include <winsock.h>
+
+#endif
+
 namespace server
 {
   class TcpServer;

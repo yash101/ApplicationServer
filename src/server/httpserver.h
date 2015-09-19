@@ -22,7 +22,7 @@ namespace server
     POST,
     HEAD,
     PUT,
-    DELETE,
+    DEL,
     CONNECT,
     OPTIONS,
     TRACE

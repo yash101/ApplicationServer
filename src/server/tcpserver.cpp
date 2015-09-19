@@ -1,12 +1,27 @@
 #include "tcpserver.h"
+#include "entry.h"
 #include <string.h>
 #include <stddef.h>
 #include <new>
 #include <thread>
 #include <sstream>
 
+#ifndef _WIN32
+
 #include <netinet/in.h>
 #include <unistd.h>
+
+#else
+
+#pragma comment(lib, "Ws2_32.lib")
+
+#include <Windows.h>
+WSADATA wsadata;
+WORD wVersionRequested = NULL;
+int wsaerr = 0;
+bool wsaInitialized = false;
+
+#endif
 
 server::TcpServer& server::TcpServer::set_port(int port)
 {
@@ -39,7 +54,11 @@ ReturnStatusCode server::TcpServer::start_server()
 
   //Set REUSEADDR to true
   int on = 1;
+#ifndef _WIN32
   setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+#else
+  setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR, (char*) &on, sizeof(on));
+#endif
 
   //Attempt to bind to the socket
   if(bind(_fd, (struct sockaddr*) _address, sizeof(struct sockaddr_in)) < 0)
@@ -90,6 +109,10 @@ ReturnStatusCode server::TcpServer::listener()
     }
 
     //Accept a connection
+#ifdef _WIN32
+    typedef int socklen_t;
+#endif
+
     connection->fd = accept(
       _fd,
       (struct sockaddr*) connection->address,
@@ -105,7 +128,11 @@ ReturnStatusCode server::TcpServer::listener()
     }
 
     //Set the read timeout
+#ifndef _WIN32
     if(setsockopt(connection->fd, SOL_SOCKET, SO_RCVTIMEO, (struct timeval*) &_timeout, sizeof(struct timeval)))
+#else
+    if(setsockopt(connection->fd, SOL_SOCKET, SO_RCVTIMEO, (char*) &_timeout, sizeof(struct timeval)))
+#endif
     {
       delete connection;
       continue;
@@ -186,14 +213,36 @@ server::TcpServer::TcpServer() :
   _connected_clients(0),
   _max_connected_clients(0)
 {
+#ifdef _WIN32
+  
+  if(!wsaInitialized)
+  {
+    wVersionRequested = MAKEWORD(2, 2);
+    wsaerr = WSAStartup(wVersionRequested, &wsadata);
+
+    if(wsaerr != 0)
+    {
+      fprintf(stderr, "Unable to find winsock!\n");
+      server::log("Unable to find and initialize winsock! Die.");
+      exit(EXIT_FAILURE);
+    }
+  }
+
+#endif
+
   memset(&_timeout, 0, sizeof(struct timeval));
 }
 
 server::TcpServer::~TcpServer()
 {
   delete (struct sockaddr_in*) _address;
+#ifndef _WIN32
   shutdown(_fd, SHUT_RDWR);
   close(_fd);
+#else
+  shutdown(_fd, 1);
+  closesocket(_fd);
+#endif
 }
 
 server::TcpServerConnection::TcpServerConnection() :
@@ -208,8 +257,13 @@ server::TcpServerConnection::TcpServerConnection() :
 server::TcpServerConnection::~TcpServerConnection()
 {
   delete (struct sockaddr_in*) address;
+#ifndef _WIN32
   shutdown(fd, SHUT_RDWR);
   close(fd);
+#else
+  shutdown(fd, 1);
+  closesocket(fd);
+#endif
 
   if(_external_connected_clients_lock != NULL &&
      _connected_clients != NULL
@@ -224,7 +278,11 @@ server::TcpServerConnection::~TcpServerConnection()
 char server::TcpServerConnection::read()
 {
   char ch;
+#ifdef _WIN32
+  if(::recv(fd, &ch, sizeof(char), 0) <= 0)
+#else
   if(::recv(fd, &ch, sizeof(char), MSG_NOSIGNAL) <= 0)
+#endif
   {
     if(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS)
       throw Exception(StatusCode("Socket read timed out", errno));
@@ -247,7 +305,11 @@ std::string server::TcpServerConnection::read(size_t mxlen)
   }
 
   int ret;
+#ifdef _WIN32
+  if((ret = ::recv(fd, buffer, mxlen, 0) <= 0))
+#else
   if((ret = ::recv(fd, buffer, mxlen, MSG_NOSIGNAL) <= 0))
+#endif
   {
     if(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS)
       throw Exception(StatusCode("Socket read timed out", errno));
@@ -264,7 +326,11 @@ std::string server::TcpServerConnection::read(size_t mxlen)
 int server::TcpServerConnection::read(void* buffer, size_t len)
 {
   int ret;
+#ifdef _WIN32
+  if((ret = ::recv(fd, (char*) buffer, len, 0) <= 0))
+#else
   if((ret = ::recv(fd, buffer, len, MSG_NOSIGNAL) <= 0))
+#endif
   {
     if(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINPROGRESS)
       throw Exception(StatusCode("Socket read timed out", errno));
@@ -277,7 +343,11 @@ void server::TcpServerConnection::write(void* data, size_t len)
 {
   int ret;
   void* dpt = data;
+#ifdef _WIN32
+  ret = ::send(fd, (char*) data, len, 0);
+#else
   ret = ::send(fd, data, len, MSG_NOSIGNAL);
+#endif
   if(ret < 0) throw Exception(StatusCode("Unable to write to socket", ret));
 }
 
