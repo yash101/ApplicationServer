@@ -1,7 +1,5 @@
 #include "httpserver.h"
 #include "stringproc.h"
-#include <sys/sendfile.h>
-
 
 server::HttpCookie::HttpCookie()
 {}
@@ -106,9 +104,6 @@ std::string server::getHTTPStatus(short int code)
 std::string server::encodeURI(std::string in)
 {
   std::stringstream ret;
-  char c;
-  int ic;
-
   char hexBuffer[10];
 
   for(size_t i = 0; i < in.size(); i++)

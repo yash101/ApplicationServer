@@ -21,7 +21,11 @@ int main(int argc, char** argv)
     }
   }
 
+#ifdef _WIN32
+  CreateDirectory("config", NULL);
+#else
   mkdir("config", S_IRWXU | S_IRWXG | S_IROTH);
+#endif
 
   server::configuration.LoadConfiguration();
 
