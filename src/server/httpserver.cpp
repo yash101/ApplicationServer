@@ -318,7 +318,7 @@ void server::HttpServer::send_response(server::HttpServerSession* session)
     int ret = sendfile(session->connection->fd, fileno(session->Response.ftype), 0, len);
 #else
     int ret = 0;
-#endif;
+#endif
 
     if(ret < 0)
     {
