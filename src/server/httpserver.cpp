@@ -223,7 +223,47 @@ void server::HttpServer::parse_post_queries(server::HttpServerSession* session)
     ///If we got a multipart request...
     else if(server::tolower(session->incoming_headers["content-type"]).find("multipart/form-data") != std::string::npos)
     {
-      //To be implemented... :(
+      throw Exception(StatusCode("Unable to parse POST request; Multipart POST request processing is under development!", -1));
+      /****************************************
+       * 					UNDER DEVELOPMENT						*
+       ****************************************/
+      if(session->incoming_headers["content-length"].size() != 0)
+      {
+        size_t reqsize = atoll(session->incoming_headers["content-length"].c_str());
+        std::string boundary = "";
+        std::vector<std::string> pts = server::split(session->incoming_headers["content-type"], ';');
+        for(size_t i = 0; i < pts.size(); i++)
+        {
+          server::tolower(pts[i]);
+          std::vector<std::string> d2x = server::split(pts[i], '=');
+          if(d2x.size() < 2)
+          {
+            throw Exception(StatusCode("Unable to process POST data. Invalid POST data!", -1));
+          }
+          else
+          {
+            boundary = server::pad(d2x[1]);
+          }
+        }
+
+
+        size_t nrec = 0;
+        std::string rdbuf = "";
+
+        while(nrec++ < reqsize && rdbuf.back() != '\n' && rdbuf[rdbuf.size() - 2] != '\r')
+        {
+          rdbuf += (char) session->connection->read();
+        }
+
+        if(rdbuf.back() == '\r' || rdbuf.back() == '\n')
+        {
+          rdbuf.pop_back();
+        }
+      }
+
+      /***************************************
+       * 				FINISH UNDER DEVELOPMENT     *
+       ***************************************/
     }
   }
 }
