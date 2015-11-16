@@ -1,7 +1,1 @@
-.DS_Store
-*.user
-*.tmp
-*.swp
-run
-Debug
-build
+/Debug/

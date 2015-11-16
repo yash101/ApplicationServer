@@ -9,6 +9,8 @@
 #include "stringproc.h"
 #include <string>
 #include <sys/sendfile.h>
+#include <execinfo.h>
+#include <stdlib.h>
 //To make it easier to throw an exception with debug info :)
 #define HttpException(msg, code, httpstat) (daf::HttpServer::Exception(msg, code, httpstat, __FILE__, __LINE__))
 #define MAX_HTTP_LINE_LENGTH (16384)
@@ -49,8 +51,53 @@ void daf::HttpServer::Server::worker(daf::TcpServer::Connection* connection)
 
 void daf::HttpServer::Server::bad_request(daf::HttpServer::Session* session, daf::HttpServer::Exception& e)
 {
+  if(e.getStatusCode().getHttpStatusCode() < 0) return;
   std::stringstream write;
-//  write << "HTTP/1.0 " << e.getStatusCode().getHttpStatusCode() << " " << e.getStatusCode().getStatusCode().message();;
+  write << "<!DOCTYPE html>";
+#define o write << std::endl <<
+  o "<html>";
+    o "<head>";
+      o "<title>Error " << e.getStatusCode().getHttpStatusCode() << ": " << e.getStatusCode().getMessage() << "</title>";
+    o "</head>";
+    o "<body>";
+      o "<h1><center>Error " << e.getStatusCode().getHttpStatusCode() << ": " << e.getStatusCode().getMessage() << "</center></h1>";
+      o "<p>The information you sent us resulted in an error during processing!</p>";
+      o "<h2>Error Information and Traceback</h2>";
+      o "<div style=\"background-color: #C6C6C6; margin: 32px; padding: 32px;\">";
+        o "<h3><center>Information</center></h3>";
+        o "<hr />";
+        o "<pre>";
+          o "Message: " << e.getStatusCode().getMessage();
+          o "Error Code: " << e.getStatusCode().getCode();
+          o "Status Code: " << e.getStatusCode().getHttpStatusCode();
+          o "Error in file: " << e.getStatusCode().getSourceLocation();
+          o "Error line number: " << e.getStatusCode().getLineNumber();
+          o "Processed Path: " << session->Path;
+          o "Path: " << session->CompletePath;
+        o "</pre>";
+      o "</div>";
+      o "<div style=\"background-color: #C6C6C6; margin: 32px; padding: 32px;\">";
+        o "<h3><center>Stacktrace</center></h3>";
+        o "<hr />";
+        o "<pre>";
+          o e.getStacktrace();
+        o "</pre>";
+      o "</div>";
+      o "<div style=\"height: 30px;\"></div>";
+      o "<p style=\"background-color: #C6C6C6;\">Powered by <a href=\"https://github.com/yash101/ApplicationServer/\">ApplicationServer</a>!</p>";
+    o "</body>";
+  o "</html>";
+#undef o
+
+  std::stringstream send;
+  send << "HTTP/1.0 " << e.getStatusCode().getHttpStatusCode() << " " << daf::Http::statusString(e.getStatusCode().getHttpStatusCode()) << "\r\n";
+  send << "Content-Length: " << write.str().size() << "\r\n";
+  send << "Content-Type: text/html\r\n";
+  send << "Date: " << daf::Http::timestamp() << "\r\n\r\n";
+
+  send << write.str() << "\r\n";
+
+  session->TcpConnection->write(send.str());
 }
 
 void daf::HttpServer::Server::process_request(daf::HttpServer::Session* session)
@@ -145,7 +192,7 @@ void daf::HttpServer::Server::process_request(daf::HttpServer::Session* session)
     }
     else
     {
-      session->IncomingHeaders[key] = value;
+      session->IncomingHeaders[std::string(key.c_str())] = std::string(value.c_str());
     }
   }
 
@@ -335,4 +382,30 @@ void daf::HttpServer::Server::request_handler(daf::HttpServer::Session& session)
 
 void daf::HttpServer::Server::websocket_handler(daf::HttpServer::Socket& socket)
 {
+}
+
+
+
+//Generate exception backtrace
+void daf::HttpServer::Exception::generateStacktrace()
+{
+  void* traces[25];
+  backtrace_size = backtrace(traces, 25);
+  backtrace_strings = backtrace_symbols(traces, backtrace_size);
+}
+
+String daf::HttpServer::Exception::getStacktrace()
+{
+  std::stringstream str;
+  for(int i = 0; i < backtrace_size; i++)
+  {
+    str << "[" << i << "]: " << backtrace_strings[i] << std::endl;
+  }
+  return str.str();
+}
+
+daf::HttpServer::Exception::~Exception()
+{
+  if(backtrace_strings != NULL)
+    free(backtrace_strings);
 }

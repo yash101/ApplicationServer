@@ -318,8 +318,13 @@ int daf::TcpServer::Connection::readline(char* buffer, size_t bufsz, char end)
   while(spos < bufsz)
   {
     spos++;
-    (*chl++) = this->read();
-    if(*chl == end) *chl = '\0';
+    (*chl) = this->read();
+    if((char)(*chl) == (char) end)
+    {
+      *chl = '\0';
+      break;
+    }
+    chl++;
   }
 
   return (int) spos;

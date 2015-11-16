@@ -111,12 +111,6 @@ namespace daf
       virtual ~Server();
     };
 
-    class Cookie
-    {
-    private:
-    public:
-    };
-
     class Session
     {
       friend class Server;
@@ -156,11 +150,18 @@ namespace daf
     class ReturnStatusCode
     {
     private:
-      const daf::ReturnStatusCode rsc;
       const short int HttpStatusCode;
+      const char* Message;
+      const int Code;
+      const char* Source;
+      const unsigned long long LineNumber;
     public:
       inline ReturnStatusCode() :
-        HttpStatusCode(500)
+        HttpStatusCode(500),
+        Message("An error occurred during the processing of the transaction"),
+        Code(0),
+        Source(__FILE__),
+        LineNumber(__LINE__)
       {
       }
 
@@ -171,8 +172,11 @@ namespace daf
         const char* source,
         const unsigned long long line_num
       ) :
-        rsc(message, code, source, line_num),
-        HttpStatusCode(httpstatus)
+        HttpStatusCode(httpstatus),
+        Message(message),
+        Code(code),
+        Source(source),
+        LineNumber(line_num)
       {
       }
 
@@ -185,9 +189,24 @@ namespace daf
         return HttpStatusCode;
       }
 
-      inline const daf::ReturnStatusCode getStatusCode()
+      inline const char* getMessage()
       {
-        return rsc;
+        return Message;
+      }
+
+      inline int getCode()
+      {
+        return Code;
+      }
+
+      inline const char* getSourceLocation()
+      {
+        return Source;
+      }
+
+      inline unsigned long long getLineNumber()
+      {
+        return LineNumber;
       }
     };
 
@@ -196,10 +215,16 @@ namespace daf
     private:
       const ReturnStatusCode rsc;
       const char* msg;
+      int backtrace_size;
+      char** backtrace_strings;
+      void generateStacktrace();
     public:
       inline Exception() :
-        msg("An exception was thrown")
+        msg("An exception was thrown"),
+        backtrace_size(0),
+        backtrace_strings(NULL)
       {
+        this->generateStacktrace();
       }
 
       inline Exception(
@@ -210,19 +235,26 @@ namespace daf
         const unsigned long long line_num
       ) :
         rsc(message, code, httpstatus, source, line_num),
-        msg(message)
+        msg(message),
+        backtrace_size(0),
+        backtrace_strings(NULL)
       {
+        this->generateStacktrace();
       }
+
+      virtual ~Exception();
 
       inline virtual const char* what() const throw()
       {
         return msg;
       }
 
-      inline const ReturnStatusCode getStatusCode()
+      inline ReturnStatusCode getStatusCode()
       {
         return rsc;
       }
+
+      std::string getStacktrace();
     };
   }
 }
