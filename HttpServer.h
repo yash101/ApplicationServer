@@ -14,6 +14,12 @@
 #include <string>
 #include <vector>
 #include <map>
+
+#ifdef _WIN32
+typedef long long ssize_t;
+#endif
+
+
 namespace daf
 {
   namespace Http

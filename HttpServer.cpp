@@ -8,9 +8,13 @@
 #include "HttpServer.h"
 #include "stringproc.h"
 #include <string>
+#include <stdlib.h>
+
+#ifndef _WIN32
 #include <sys/sendfile.h>
 #include <execinfo.h>
-#include <stdlib.h>
+#endif
+
 //To make it easier to throw an exception with debug info :)
 #define HttpException(msg, code, httpstat) (daf::HttpServer::Exception(msg, code, httpstat, __FILE__, __LINE__))
 #define MAX_HTTP_LINE_LENGTH (16384)
@@ -140,7 +144,7 @@ void daf::HttpServer::Server::process_request(daf::HttpServer::Session* session)
   else
   {
     char buffer[16384];
-    snprintf(buffer, sizeof(buffer), "501 Unimplemented: \"%s\" has not been implemented or could not be understood!", w.c_str());
+    sprintf(buffer, "501 Unimplemented: \"%s\" has not been implemented or could not be understood!", w.c_str());
     throw HttpException(buffer, -1, 501);
   }
 
@@ -389,9 +393,13 @@ void daf::HttpServer::Server::websocket_handler(daf::HttpServer::Socket& socket)
 //Generate exception backtrace
 void daf::HttpServer::Exception::generateStacktrace()
 {
+#ifndef _WIN32
   void* traces[25];
   backtrace_size = backtrace(traces, 25);
   backtrace_strings = backtrace_symbols(traces, backtrace_size);
+#else
+  backtrace_strings = NULL;
+#endif
 }
 
 String daf::HttpServer::Exception::getStacktrace()

@@ -114,7 +114,7 @@ std::string daf::tolower(std::string in)
   out.reserve(in.size());
   for(size_t i = 0; i < in.size(); i++)
   {
-    out[i] = (char) ::tolower(in[i]);
+    out.push_back((char) ::tolower(in[i]));
   }
   return out;
 }
@@ -125,7 +125,7 @@ std::string daf::toupper(std::string in)
   out.reserve(in.size());
   for(size_t i = 0; i < in.size(); i++)
   {
-    out[i] = (char) ::toupper(in[i]);
+    out.push_back((char) ::tolower(in[i]));
   }
   return out;
 }
