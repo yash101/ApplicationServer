@@ -86,7 +86,7 @@ String daf::Http::encodeURI(String in)
     }
     else
     {
-      snprintf(hexbuf, sizeof(hexbuf), "%X", in[i]);
+      sprintf(hexbuf, "%X", in[i]);
       if(int(in[i]) < 16) ret << "%0";
       else ret << "%";
       ret << hexbuf;

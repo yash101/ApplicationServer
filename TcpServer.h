@@ -8,6 +8,10 @@
 #ifndef TCPSERVER_H_
 #define TCPSERVER_H_
 
+#ifdef _WIN32
+typedef long long ssize_t;
+#endif
+
 #include <string>
 #include <mutex>
 

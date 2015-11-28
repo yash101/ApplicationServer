@@ -144,9 +144,8 @@ void* tool::Logger::write_hex(void* data, size_t len)
 
     for(size_t i = 0; i < nrows; i++)
     {
-      snprintf(
+      sprintf(
         buffer,
-        sizeof(buffer) * sizeof(char),
         "\t[%u]\t%20hhX %20hhX %20hhX %20hhX %20hhX %20hhX %20hhX %20hhX %20hhX %20hhX %20hhX %20hhX %20hhX %20hhX %20hhX %20hhX",
         (int) i + 1,
         *((char*) w + sizeof(char) * 0),
@@ -177,7 +176,7 @@ void* tool::Logger::write_hex(void* data, size_t len)
       _file << "\t[" << nrows + 1 << "]\t";
       for(size_t i = 0; i < next; i++)
       {
-        snprintf(buffer, sizeof(buffer) * sizeof(char), "%hhX ", *((char*) w + sizeof(char) * 1));
+        sprintf(buffer, "%hhX ", *((char*) w + sizeof(char) * 1));
         _file << buffer;
       }
 

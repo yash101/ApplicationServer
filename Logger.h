@@ -13,6 +13,10 @@
 #include <vector>
 #include <mutex>
 
+#ifdef _WIN32
+typedef long long ssize_t;
+#endif
+
 namespace tool
 {
   class Logger

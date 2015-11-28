@@ -12,6 +12,10 @@
 #include <vector>
 #include <sstream>
 
+#ifdef _WIN32
+typedef long long ssize_t;
+#endif
+
 inline bool operator==(std::string a, std::string b);
 inline bool operator!=(std::string a, std::string b);
 
