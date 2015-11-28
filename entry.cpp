@@ -5,18 +5,27 @@
  *      Author: yash
  */
 
-#include "entry.h"
-#include "Logger.h"
-#include "HttpServer.h"
+#ifndef CONFIGURATION_FILE_LOCATION
+#define CONFIGURATION_FILE_LOCATION "Config.cfg"
+#endif
 
-int main(int argc, char** argv)
+#include <stdio.h>
+
+#include "entry.h"
+#include "ApplicationServer.h"
+
+static daf::Config* conf = NULL;
+
+int init(int argc, char** argv)
 {
   Arguments::count = argc;
   Arguments::arguments = argv;
+  conf = new daf::Config(CONFIGURATION_FILE_LOCATION);
+}
 
-  daf::HttpServer::Server server;
-  server.setPort(1234);
-  server.startServer();
+daf::Config& Configuration()
+{
+  return (*conf);
 }
 
 // Arguments are stored in the namespace, Arguments

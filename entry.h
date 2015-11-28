@@ -7,13 +7,15 @@
 
 #ifndef ENTRY_H_
 #define ENTRY_H_
-
-int main(int argc, char** argv);
+#include "Configuration.h"
+int init(int argc, char** argv);
 
 namespace Arguments
 {
   extern int count;
   extern char** arguments;
 }
+
+daf::Config& Configuration();
 
 #endif /* ENTRY_H_ */

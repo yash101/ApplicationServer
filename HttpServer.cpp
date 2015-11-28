@@ -187,7 +187,7 @@ void daf::HttpServer::Server::process_request(daf::HttpServer::Session* session)
         key = daf::trim(cookies[i].substr(0, pos));
         value = daf::trim(cookies[i].substr(pos + 1, cookies[i].size()));
 
-        session->IncomingCookies[daf::Http::decodeURI(key)] = daf::Http::decodeURI(value);
+        session->IncomingCookies[String(key)] = String(value);
       }
     }
     else
@@ -323,7 +323,7 @@ void daf::HttpServer::Server::send_response(daf::HttpServer::Session* session)
 
   for(std::map<std::string, std::string>::const_iterator it = session->Cookies.begin(); it != session->Cookies.end(); ++it)
   {
-    session->TcpConnection->write(String("Set-Cookie: " + daf::Http::encodeURI(it->first) + "=" + daf::Http::encodeURI(it->second) + "\r\n").c_str());
+    session->TcpConnection->write(String("Set-Cookie: " + it->first + "=" + it->second + "\r\n").c_str());
   }
 
   session->TcpConnection->write("\r\n");
