@@ -15,6 +15,7 @@
 #include <string>
 #include <iostream>
 
+//Constructos
 tool::Logger::Logger() :
   _file_location("")
 {
@@ -37,16 +38,17 @@ tool::Logger::~Logger()
   _file.close();
 }
 
+//Opens a log file
 void tool::Logger::open(std::string location)
 {
-  volatile tool::AutoSTDMutex mutex(_sync_lock);
+  volatile tool::AutoMutex<std::mutex>(_sync_lock);
   if(!_file.is_open())
     _file.open(location.c_str(), std::ios::out | std::ios::app);
 }
 
 const char* tool::Logger::operator()(const char* message)
 {
-  volatile tool::AutoSTDMutex mutex(_sync_lock);
+  volatile tool::AutoMutex<std::mutex>(_sync_lock);
   if(_file.is_open())
   {
     auto now = std::chrono::system_clock::now();
@@ -58,9 +60,10 @@ const char* tool::Logger::operator()(const char* message)
   return message;
 }
 
+//Log a message
 std::string& tool::Logger::operator()(std::string& message)
 {
-  volatile tool::AutoSTDMutex mutex(_sync_lock);
+  volatile tool::AutoMutex<std::mutex>(_sync_lock);
   if(_file.is_open())
   {
     auto now = std::chrono::system_clock::now();
@@ -73,7 +76,7 @@ std::string& tool::Logger::operator()(std::string& message)
 
 const char* tool::Logger::log(const char* message)
 {
-  volatile tool::AutoSTDMutex mutex(_sync_lock);
+  volatile tool::AutoMutex<std::mutex>(_sync_lock);
   if(_file.is_open())
   {
     auto now = std::chrono::system_clock::now();
@@ -86,7 +89,7 @@ const char* tool::Logger::log(const char* message)
 
 std::string& tool::Logger::log(std::string& message)
 {
-  volatile tool::AutoSTDMutex mutex(_sync_lock);
+  volatile tool::AutoMutex<std::mutex>(_sync_lock);
   if(_file.is_open())
   {
     auto now = std::chrono::system_clock::now();
@@ -97,9 +100,10 @@ std::string& tool::Logger::log(std::string& message)
   return message;
 }
 
+//Writes binary data
 void* tool::Logger::write_bin(void* data, size_t len)
 {
-  volatile tool::AutoSTDMutex mutex(_sync_lock);
+  volatile tool::AutoMutex<std::mutex>(_sync_lock);
   if(_file.is_open())
   {
     auto now = std::chrono::system_clock::now();
@@ -114,7 +118,7 @@ void* tool::Logger::write_bin(void* data, size_t len)
 
 std::vector<char>& tool::Logger::write_bin(std::vector<char>& data)
 {
-  volatile tool::AutoSTDMutex mutex(_sync_lock);
+  volatile tool::AutoMutex<std::mutex>(_sync_lock);
   if(_file.is_open())
   {
     auto now = std::chrono::system_clock::now();
@@ -127,9 +131,10 @@ std::vector<char>& tool::Logger::write_bin(std::vector<char>& data)
   return data;
 }
 
+//Writes hexadecimal data
 void* tool::Logger::write_hex(void* data, size_t len)
 {
-  volatile tool::AutoSTDMutex mutex(_sync_lock);
+  volatile tool::AutoMutex<std::mutex>(_sync_lock);
   if(_file.is_open())
   {
     auto now = std::chrono::system_clock::now();
@@ -187,8 +192,9 @@ void* tool::Logger::write_hex(void* data, size_t len)
   return data;
 }
 
+//Writes hex from a vector. Unimplemended
 std::vector<char>& tool::Logger::write_hex(std::vector<char>& data)
 {
-  volatile tool::AutoSTDMutex mutex(_sync_lock);
+  volatile tool::AutoMutex<std::mutex>(_sync_lock);
   return data;
 }

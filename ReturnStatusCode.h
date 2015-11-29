@@ -11,7 +11,9 @@
 #include <exception>
 namespace daf
 {
+  //A status code so functions can send back feedback to the callee for tons of info
   class ReturnStatusCode;
+  //Exception class wrapper around ReturnStatusCode
   class Exception;
 
   class ReturnStatusCode

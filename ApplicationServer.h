@@ -11,18 +11,23 @@
 #include <functional>
 #include <map>
 
+//Default namespace
 namespace daf
 {
+  //Classes we will use
   class ApplicationServer;
   class Hostname;
 
+  //Some typedefs to make typing easier, code bug-free and more readable :). Basically, aesthetics
   typedef bool (*PointerFunction)(daf::HttpServer::Session&);
   typedef bool (*DataPointerFunction)(daf::HttpServer::Session&, void*);
   typedef void* DPFDAT;
   typedef std::function<bool(daf::HttpServer::Session&)> LambdaFunction;
 
+  //This is the function that can serve a static file
   bool static_handler(daf::HttpServer::Session& session, DPFDAT path);
 
+  //This picks a path handler
   class Hostname
   {
     friend class ApplicationServer;
@@ -82,6 +87,8 @@ namespace daf
     }
   };
 
+  //This is what we interact with directly. It's the base of everything
+  //This searches for a Hostname to do the processing whenever a request hits the server
   class ApplicationServer : public daf::HttpServer::Server
   {
     friend class Hostname;

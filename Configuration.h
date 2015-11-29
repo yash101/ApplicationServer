@@ -21,10 +21,8 @@ namespace daf
     std::map<std::string, std::string> Storage;
   public:
     Config();
-//    Config(Config&);
     Config(const char* loc);
     Config(std::string loc);
-//    Config& operator=(Config&);
 
     virtual ~Config();
 

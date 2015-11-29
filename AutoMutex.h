@@ -9,20 +9,25 @@
 #define AUTOMUTEX_H_
 
 #include <stddef.h>
-#include <mutex>
 
+//Namespace for misc. tools
 namespace tool
 {
+  //This class allows us to play with mutexes
   template<typename MutexClassType>
   class AutoMutex
   {
-  public:
+  private:
+    //This holds a pointer to any type of mutex object
     MutexClassType* mutex;
 
+  public:
+    //This is a default initializer.
     AutoMutex() :
       mutex(NULL)
     {}
 
+    //This takes a reference
     AutoMutex(MutexClassType& mtx) :
       mutex(&mtx)
     {
@@ -30,6 +35,7 @@ namespace tool
         mutex->lock();
     }
 
+    //This takes a pointer
     AutoMutex(MutexClassType* mtx) :
       mutex(mtx)
     {
@@ -39,6 +45,7 @@ namespace tool
       }
     }
 
+    //This unlocks the mutex
     virtual ~AutoMutex()
     {
       if(mutex != NULL)
@@ -47,8 +54,6 @@ namespace tool
       }
     }
   };
-
-  typedef AutoMutex<std::mutex> AutoSTDMutex;
 }
 
 #endif /* AUTOMUTEX_H_ */

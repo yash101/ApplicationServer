@@ -12,10 +12,12 @@
 #include <time.h>
 #include <sstream>
 
+//To reduce typing
 #define String std::string
 #define Vector std::vector
 #define ToString std::to_string
 
+//These are the names of the days of the week
 static const char* const days[] =
 {
   "Mon",
@@ -27,6 +29,7 @@ static const char* const days[] =
   "Sun"
 };
 
+//These are the names of the months
 static const char* const months[] =
 {
   "Jan",
@@ -43,6 +46,7 @@ static const char* const months[] =
   "Dec"
 };
 
+//This function decodes a URL Encoded string
 String daf::Http::decodeURI(String in)
 {
   String ret;
@@ -69,6 +73,7 @@ String daf::Http::decodeURI(String in)
   return ret;
 }
 
+//This function URL encodes a string
 String daf::Http::encodeURI(String in)
 {
   std::stringstream ret;
@@ -96,6 +101,7 @@ String daf::Http::encodeURI(String in)
   return ret.str();
 }
 
+//Inline functions of the two above
 void daf::Http::idecodeURI(String& in)
 {
   in = daf::Http::decodeURI(in);
@@ -106,6 +112,7 @@ void daf::Http::iencodeURI(String& in)
   in = daf::Http::encodeURI(in);
 }
 
+//Gets an HTTP timestamp
 String daf::Http::timestamp()
 {
   time_t localtime;
@@ -122,9 +129,10 @@ String daf::Http::timestamp()
   return str.str();
 }
 
+
+//These following things get us status codes
 static std::map<short int, String> statuscodes;
 static bool statuscodes_initialized = false;
-
 String daf::Http::statusString(short int code)
 {
   if(!statuscodes_initialized)

@@ -19,11 +19,13 @@
 typedef long long ssize_t;
 #endif
 
-
+//Default namespace
 namespace daf
 {
+  //Stores HTTP functions, enumerations and typical classes
   namespace Http
   {
+    //What type of request are we receiving
     enum RequestType
     {
       GET,
@@ -36,12 +38,14 @@ namespace daf
       TRACE
     };
 
+    //What HTTP protocol version are we using
     enum Protocol
     {
       HTTP10,
       HTTP11
     };
 
+    //Where is a piece of data being stored
     enum DataSource
     {
       FILE,
@@ -49,6 +53,7 @@ namespace daf
       CACHE
     };
 
+    //Stores data and what type of data is being stored
     class Data
     {
     public:
@@ -70,25 +75,25 @@ namespace daf
       }
     };
 
+    //Encodes and decodes URLs
     std::string encodeURI(std::string in);
     std::string decodeURI(std::string in);
     void iencodeURI(std::string& in);
     void idecodeURI(std::string& in);
 
+    //Gets timestamps and converts a status code to a status string
     std::string timestamp();
     std::string statusString(short int code);
   }
 
+  //Stores HTTP server classes
   namespace HttpServer
   {
-    class Server;
-    class ReturnStatusCode;
-    class Exception;
-    class Session;
-    class Socket;
-    class Cookie;
-    class Post;
-    class Response;
+    class Server;           //Main server
+    class ReturnStatusCode; //A typical ReturnStatusCode (see ReturnStatusCode.h), but has an extra field for HTTP debugging
+    class Exception;        //Throwable exception around ReturnStatusCode
+    class Session;          //Holds all the information for a request and a response
+    class Socket;           //Allows interaction with an HTTP socket
 
     class Server : public daf::TcpServer::Server
     {

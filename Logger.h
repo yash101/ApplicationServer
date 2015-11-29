@@ -19,6 +19,7 @@ typedef long long ssize_t;
 
 namespace tool
 {
+  //Logs messages to a file
   class Logger
   {
   private:

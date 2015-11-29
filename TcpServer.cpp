@@ -21,10 +21,11 @@
 #include <errno.h>
 
 #else
-
+//Link the WinSock library
 #pragma comment(lib, "Ws2_32.lib")
 #include <Windows.h>
 
+//Important for WinSock initialization
 static WSADATA WsaData;
 static WORD WsaVersionRequested = NULL;
 static int Wsaerr = 0;
@@ -160,6 +161,7 @@ void daf::TcpServer::Server::listener()
     //If we do, poll continuously until we find one.
     while(true)
     {
+      //Number of max clients, and number of connected clients
       size_t nmc = 0;
       size_t nc = 0;
 
@@ -167,6 +169,7 @@ void daf::TcpServer::Server::listener()
       nmc = nMaxConnectedClients;
       nMaxConnectedClientsMutex.unlock();
 
+      //If max clients is unlimited
       if(nmc == 0)
         break;
 
@@ -174,6 +177,7 @@ void daf::TcpServer::Server::listener()
       nc = nConnectedClients;
       nConnectedClientsMutex.unlock();
 
+      //Check if we can allocate a session
       if(nc <= nmc)
         break;
     }
@@ -204,6 +208,7 @@ void daf::TcpServer::Server::listener()
     ((struct timeval*) TimeoutStructure)->tv_sec = TimeoutSec;
     ((struct timeval*) TimeoutStructure)->tv_usec = TimeoutUsec;
 
+    //Set the socket read/write timeout
 #ifndef _WIN32
     if(setsockopt(connection->FileDescriptor, SOL_SOCKET, SO_RCVTIMEO, (struct timeval*) &TimeoutStructure, sizeof(struct timeval)))
 #else
@@ -310,6 +315,7 @@ std::string daf::TcpServer::Connection::readline(char end)
   return string;
 }
 
+//Read a line, ending in `char end`
 int daf::TcpServer::Connection::readline(char* buffer, size_t bufsz, char end)
 {
   char* chl = buffer;
@@ -330,6 +336,7 @@ int daf::TcpServer::Connection::readline(char* buffer, size_t bufsz, char end)
   return (int) spos;
 }
 
+//Read a byte
 char daf::TcpServer::Connection::read()
 {
   char ch;
@@ -348,6 +355,7 @@ char daf::TcpServer::Connection::read()
   return ch;
 }
 
+//Write a byte
 ssize_t daf::TcpServer::Connection::write(char ch)
 {
   ssize_t ret;
@@ -363,6 +371,7 @@ ssize_t daf::TcpServer::Connection::write(char ch)
   return ret;
 }
 
+//Write a string
 ssize_t daf::TcpServer::Connection::write(std::string str)
 {
   ssize_t ret;
@@ -378,6 +387,7 @@ ssize_t daf::TcpServer::Connection::write(std::string str)
   return ret;
 }
 
+//Write a data pointer
 ssize_t daf::TcpServer::Connection::write(void* data, size_t len)
 {
   ssize_t ret;

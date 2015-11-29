@@ -8,31 +8,17 @@
 #include "Configuration.h"
 #include <fstream>
 #include <sstream>
-#include <iostream>
 #include <string.h>
 
 #include "AutoMutex.h"
 #include "stringproc.h"
 
+//Initializers. Nothing big :)
 daf::Config::Config() :
   FileLocation("")
 {
   refresh();
 }
-
-//daf::Config::Config(daf::Config& config) :
-//  FileLocation(config.FileLocation),
-//  Storage(config.Storage)
-//{
-//  refresh();
-//}
-//
-//daf::Config& daf::Config::operator=(daf::Config& cf)
-//{
-//  FileLocation = cf.FileLocation;
-//  Storage = cf.Storage;
-//  return *this;
-//}
 
 daf::Config::Config(const char* location) :
   FileLocation(location)
@@ -46,16 +32,19 @@ daf::Config::Config(std::string location) :
   refresh();
 }
 
+//Accesses a stored configuration value
 std::string& daf::Config::operator[](std::string key)
 {
   return Storage[key];
 }
 
+//Returns a std::map<std::string, std::string> of the configuration data
 const std::map<std::string, std::string> daf::Config::getMap()
 {
   return Storage;
 }
 
+//Erases an element from the internal storage
 bool daf::Config::remove(std::string key)
 {
   try
@@ -71,9 +60,11 @@ bool daf::Config::remove(std::string key)
 
 bool daf::Config::refresh()
 {
+  //Lock up for synchronization
   tool::AutoMutex<std::mutex>(Lock);
   std::string buffer;
 
+  //Open the configuration file
   std::ifstream fin(FileLocation.c_str(), std::ios::in);
 
   if(!fin.is_open())
@@ -81,55 +72,62 @@ bool daf::Config::refresh()
     return false;
   }
 
+  //Erase everything currently in the internal map
   Storage.clear();
 
+  //Read lines from the file one by one
   while(std::getline(fin, buffer, '\n'))
   {
+    //Trim the line
     daf::itrim(buffer);
     std::stringstream str;
 
-//    for(std::string::const_iterator it = buffer.begin(); it != buffer.end(); it++)
-//    {
-//      if((*it) == '\\')
-//      {
-//        if(it != buffer.end())
-//        {
-//          ++it;
-//          switch((*it))
-//          {
-//            case '\'':
-//              str << '\'';
-//              break;
-//            case 'n':
-//              str << '\n';
-//              break;
-//            case 'r':
-//              str << '\r';
-//              break;
-//            case 't':
-//              str << '\t';
-//              break;
-//            case '"':
-//              str << '"';
-//              break;
-//
-//            default:
-//              str << '\\';
-//          }
-//        }
-//      }
-//      else
-//      {
-//        str << (*it);
-//      }
-//    }
+    //Escape characters
+    for(std::string::const_iterator it = buffer.begin(); it != buffer.end(); it++)
+    {
+      if((*it) == '\\')
+      {
+        if(it != buffer.end())
+        {
+          ++it;
+          switch((*it))
+          {
+            case '\'':
+              str << '\'';
+              break;
+            case 'n':
+              str << '\n';
+              break;
+            case 'r':
+              str << '\r';
+              break;
+            case 't':
+              str << '\t';
+              break;
+            case '"':
+              str << '"';
+              break;
 
+            default:
+              str << '\\';
+          }
+        }
+      }
+      else
+      {
+        str << (*it);
+      }
+    }
+    buffer = str.str();
+
+    //Get rid of any comments
     size_t pos = buffer.find_last_of('#');
     if(pos != std::string::npos)
     {
       buffer = buffer.substr(0, pos);
     }
 
+    //Trim the new line
     daf::itrim(buffer);
     if(buffer.size() == 0)
       continue;
@@ -137,6 +135,7 @@ bool daf::Config::refresh()
     std::string key;
     std::string value;
 
+    //Find the character which divides the key from the value
     ssize_t del = daf::find(buffer, ':');
     if(del < 0 || buffer.back() == ':')
     {
@@ -155,18 +154,22 @@ bool daf::Config::refresh()
       daf::itrim(value);
     }
 
+    //Get rid of encompassing quotations
     if(value.back() == '\"' && value.front() == '\"')
       value = value.substr(1, value.size() - 2);
     if(key.back() == '\"' && key.front() == '\"')
       key = key.substr(1, key.size() - 2);
 
+    //Save the key and value
     Storage[key] = value;
   }
 
+  //Close the file
   fin.close();
   return true;
 }
 
+//Write the configuration file to a file.
 bool daf::Config::flush()
 {
   tool::AutoMutex<std::mutex>(Lock);
