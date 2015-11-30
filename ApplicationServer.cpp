@@ -182,7 +182,7 @@ bool daf::static_handler(daf::HttpServer::Session& session, DPFDAT data)
       directory = false;
       break;
     }
-    else if(S_ISDIR(st.st_mode))
+    else
     {
       directory = true;
     }
@@ -243,11 +243,17 @@ bool daf::static_handler(daf::HttpServer::Session& session, DPFDAT data)
         //Find the proper mime type
         session.Response.DataType = daf::Http::FILE;
         session.StatusCode = 200;
-        size_t pos = indices[i].find_last_not_of('.');
-        if(pos == std::string::npos || npath.back() == '.')
+
+        size_t pos = indices[i].find_last_of('.');
+
+        if(pos == std::string::npos || indices[i].back() == '.')
+        {
           session.Headers["content-type"] = "text/html";
+        }
         else
-          session.Headers["content-type"] = getHttpMime(npath.substr(pos + 1, npath.size()));
+        {
+          session.Headers["content-type"] = getHttpMime(indices[i].substr(pos + 1, indices[i].size()));
+        }
 
         return true;
       }
