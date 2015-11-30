@@ -110,5 +110,7 @@ namespace daf
       return DefaultHostname;
     }
   };
+
+  bool pollMime(std::string extension, std::string fallbackmime);
 }
 #endif /* APPLICATIONSERVER_H_ */

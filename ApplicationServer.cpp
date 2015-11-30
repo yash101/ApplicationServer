@@ -114,6 +114,21 @@ bool daf::Hostname::operator()(daf::HttpServer::Session& session)
   return complete;
 }
 
+//Checks if a mime exists. If it doesn't, it adds it
+bool daf::pollMime(std::string extension, std::string fbm)
+{
+  if(Configuration()["ASHTTP.mime " + extension].size() == 0)
+  {
+    Configuration()["ASHTTP.mime " + extension] = fbm;
+    Configuration().flush();
+    return false;
+  }
+  else
+  {
+    return true;
+  }
+}
+
 //Finds the mime to use from the main configuration file
 //Adds an extra entry if it was not found
 inline static std::string getHttpMime(std::string file_ext)
